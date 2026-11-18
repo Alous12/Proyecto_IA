@@ -1,0 +1,18 @@
+# Datos (pesados y con rostros de personas: no se suben a GitHub)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Entorno virtual y caché de Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Jupyter / VS Code
+.ipynb_checkpoints/
+.vscode/
+
+# Credenciales de Kaggle
+kaggle.json
