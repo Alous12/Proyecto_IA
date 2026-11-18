@@ -1,0 +1,54 @@
+{
+  "modelo": "mlp_256-64_minibatch_lr0.01_b128_do0.3",
+  "fuente_val": "lcc",
+  "fuente_test": "lcc",
+  "criterio_umbral": "APCER = BPCER en validación",
+  "por_frame": {
+    "umbral": 0.4794400930404663,
+    "apcer": 0.30649600880814754,
+    "bpcer": 0.24203821656050956,
+    "acer": 0.2742671126843286,
+    "exactitud": 0.696174142480211,
+    "auc": 0.7895726716002109,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        238,
+        76
+      ],
+      [
+        2227,
+        5039
+      ]
+    ],
+    "apcer_por_tipo": {
+      "pantalla": 0.30649600880814754
+    },
+    "apcer_max_tipo": 0.30649600880814754
+  },
+  "por_video": {
+    "umbral": 0.4266326241195202,
+    "apcer": 0.27167630057803466,
+    "bpcer": 0.2961783439490446,
+    "acer": 0.2839273222635396,
+    "exactitud": 0.7273087071240105,
+    "auc": 0.7895726716002109,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        221,
+        93
+      ],
+      [
+        1974,
+        5292
+      ]
+    ],
+    "apcer_por_tipo": {
+      "pantalla": 0.27167630057803466
+    },
+    "apcer_max_tipo": 0.27167630057803466
+  }
+}

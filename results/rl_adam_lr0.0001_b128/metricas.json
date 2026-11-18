@@ -1,0 +1,54 @@
+{
+  "modelo": "rl_adam_lr0.0001_b128",
+  "fuente_val": "lcc",
+  "fuente_test": "lcc",
+  "criterio_umbral": "APCER = BPCER en validación",
+  "por_frame": {
+    "umbral": 0.3463577926158905,
+    "apcer": 0.35122488301679056,
+    "bpcer": 0.3248407643312102,
+    "acer": 0.33803282367400034,
+    "exactitud": 0.649868073878628,
+    "auc": 0.7065084566281135,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        212,
+        102
+      ],
+      [
+        2552,
+        4714
+      ]
+    ],
+    "apcer_por_tipo": {
+      "pantalla": 0.35122488301679056
+    },
+    "apcer_max_tipo": 0.35122488301679056
+  },
+  "por_video": {
+    "umbral": 0.35521309574445087,
+    "apcer": 0.3666391412056152,
+    "bpcer": 0.29936305732484075,
+    "acer": 0.333001099265228,
+    "exactitud": 0.6361477572559366,
+    "auc": 0.7065084566281135,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        220,
+        94
+      ],
+      [
+        2664,
+        4602
+      ]
+    ],
+    "apcer_por_tipo": {
+      "pantalla": 0.3666391412056152
+    },
+    "apcer_max_tipo": 0.3666391412056152
+  }
+}

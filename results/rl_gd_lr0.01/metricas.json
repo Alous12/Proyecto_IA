@@ -1,0 +1,54 @@
+{
+  "modelo": "rl_gd_lr0.01",
+  "fuente_val": "lcc",
+  "fuente_test": "lcc",
+  "criterio_umbral": "APCER = BPCER en validación",
+  "por_frame": {
+    "umbral": 0.3190818727016449,
+    "apcer": 0.3179190751445087,
+    "bpcer": 0.5605095541401274,
+    "acer": 0.439214314642318,
+    "exactitud": 0.6720316622691292,
+    "auc": 0.5910071513602311,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        138,
+        176
+      ],
+      [
+        2310,
+        4956
+      ]
+    ],
+    "apcer_por_tipo": {
+      "pantalla": 0.3179190751445087
+    },
+    "apcer_max_tipo": 0.3179190751445087
+  },
+  "por_video": {
+    "umbral": 0.34935759007930756,
+    "apcer": 0.37021745114230664,
+    "bpcer": 0.5095541401273885,
+    "acer": 0.4398857956348476,
+    "exactitud": 0.6240105540897097,
+    "auc": 0.5910071513602311,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        154,
+        160
+      ],
+      [
+        2690,
+        4576
+      ]
+    ],
+    "apcer_por_tipo": {
+      "pantalla": 0.37021745114230664
+    },
+    "apcer_max_tipo": 0.37021745114230664
+  }
+}

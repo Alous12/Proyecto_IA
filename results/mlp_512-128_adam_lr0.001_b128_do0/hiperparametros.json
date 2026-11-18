@@ -1,0 +1,47 @@
+{
+  "hiperparametros": {
+    "modelo": "mlp",
+    "capas": [
+      512,
+      128
+    ],
+    "dropout": 0.0,
+    "optimizador": "adam",
+    "lr": 0.001,
+    "lote": 128,
+    "epocas": 60,
+    "paciencia": 15,
+    "l2": 0.0,
+    "balancear": true,
+    "fuente": "lcc",
+    "fuente_test": "lcc",
+    "test_todo": false,
+    "tamano": 64,
+    "color": "gris",
+    "semilla": 42,
+    "verbose": false,
+    "nombre": null
+  },
+  "resumen": {
+    "nombre": "mlp_512-128_adam_lr0.001_b128_do0",
+    "modelo": "mlp",
+    "optimizador": "adam",
+    "lr": 0.001,
+    "lote": 128,
+    "dropout": 0.0,
+    "l2": 0.0,
+    "epocas": 60,
+    "balancear": true,
+    "fuente": "lcc",
+    "fuente_test": "lcc",
+    "capas": "512-128",
+    "peso_real": 5.847212165097755,
+    "epocas_corridas": 17,
+    "mejor_epoca": 2,
+    "error_train": 0.44704176352924624,
+    "error_val": 1.671773589434942,
+    "val_acer": 0.2973846783159573,
+    "val_auc": 0.7635590820414928,
+    "segundos": 5.9
+  }
+}

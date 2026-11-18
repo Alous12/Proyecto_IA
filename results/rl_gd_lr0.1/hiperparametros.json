@@ -1,0 +1,47 @@
+{
+  "hiperparametros": {
+    "modelo": "regresion_logistica",
+    "capas": [
+      256,
+      64
+    ],
+    "dropout": 0.0,
+    "optimizador": "gd",
+    "lr": 0.1,
+    "lote": 128,
+    "epocas": 400,
+    "paciencia": 60,
+    "l2": 0.0,
+    "balancear": true,
+    "fuente": "lcc",
+    "fuente_test": "lcc",
+    "test_todo": false,
+    "tamano": 64,
+    "color": "gris",
+    "semilla": 42,
+    "verbose": false,
+    "nombre": null
+  },
+  "resumen": {
+    "nombre": "rl_gd_lr0.1",
+    "modelo": "regresion_logistica",
+    "optimizador": "gd",
+    "lr": 0.1,
+    "lote": 128,
+    "dropout": 0.0,
+    "l2": 0.0,
+    "epocas": 400,
+    "balancear": true,
+    "fuente": "lcc",
+    "fuente_test": "lcc",
+    "capas": "",
+    "peso_real": 5.847212165097755,
+    "epocas_corridas": 71,
+    "mejor_epoca": 11,
+    "error_train": 9.279428405082934,
+    "error_val": 6.473221804485333,
+    "val_acer": 0.3317950116422983,
+    "val_auc": 0.6613441610203268,
+    "segundos": 1.0
+  }
+}
