@@ -88,3 +88,43 @@ por video (promedio de la probabilidad de los frames del video).
 
 `notebooks/01_exploracion.ipynb`: cuántas personas, videos y frames hay por split y por
 tipo, el balance de clases y ejemplos de recortes.
+
+## 7. Modelos y entrenamiento
+
+Modelos en numpy, en `src/models/`:
+
+| Archivo | Contenido |
+|---|---|
+| `funciones_comunes.py` | sigmoide, ReLU y derivadas, BCE ponderada, bucle de entrenamiento con minibatches |
+| `optimizadores.py` | gradient descent (lote completo), minibatch y Adam |
+| `regresion_logistica.py` | baseline: `inicializar_parametros`, `calcular_logits`, `calcular_error`, `calcular_gradiente`, `actualizar_parametros`, `entrenar`, `predecir_probabilidad` |
+| `mlp.py` | red feed-forward: capas ReLU con dropout, salida sigmoide, `propagacion_adelante`, `backpropagation` |
+
+La clase real (minoritaria, ~15 % en LCC) se pondera en la BCE con `n_ataques / n_reales` de train
+(`--sin_balance` lo desactiva). Siempre se guardan los parámetros de la época con menor error de validación.
+
+```powershell
+python -m src.verificar_gradiente        # backprop vs. gradiente numérico -> results/verificacion_gradiente.txt
+
+python -m src.train --modelo regresion_logistica --optimizador adam --lr 1e-3 --lote 128
+python -m src.train --modelo mlp --capas 256 64 --dropout 0.3 --optimizador adam --lr 1e-3 --paciencia 15
+
+python -m src.experimentos               # barrido de hiperparámetros -> results/experimentos.csv
+```
+
+`src.train` guarda en `results/<nombre>/` los parámetros, `historial.csv` (error por época en train
+y validación), `curva_error.png` e `hiperparametros.json`, y llama a `src.evaluate` (sección 5).
+`src.experimentos` cambia un factor a la vez (optimizador, tasa de aprendizaje, tamaño de lote,
+arquitectura, dropout, L2, balance), registra cada corrida en `results/experimentos.csv`/`.md`,
+dibuja las curvas de validación de cada grupo en `results/experimentos/` y elige el mejor modelo
+de cada tipo **por ACER en validación** (`results/mejores_modelos.json`).
+
+Prueba cruzada (entrenar con LCC y evaluar con todo el dataset propio, normalizado con LCC):
+
+```powershell
+python -m src.data.preparar_matrices --fuente propio --estadisticas_de lcc
+python -m src.train --modelo mlp --fuente_test propio --test_todo
+```
+
+`notebooks/02_entrenamiento_colab.ipynb` hace lo mismo desde Colab (subir antes
+`data/processed/matrices/lcc_64_gris/` a Google Drive).
