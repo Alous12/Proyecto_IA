@@ -8,22 +8,22 @@
     "apcer": 1.0,
     "bpcer": 0.0,
     "acer": 0.5,
-    "exactitud": 0.04142480211081794,
+    "exactitud": 0.16346790205162146,
     "auc": 0.5,
-    "n_reales": 314,
-    "n_ataques": 7266,
+    "n_reales": 247,
+    "n_ataques": 1264,
     "matriz_confusion": [
       [
-        314,
+        247,
         0
       ],
       [
-        7266,
+        1264,
         0
       ]
     ],
     "apcer_por_tipo": {
-      "pantalla": 1.0
+      "spoof": 1.0
     },
     "apcer_max_tipo": 1.0
   },
@@ -32,22 +32,22 @@
     "apcer": 1.0,
     "bpcer": 0.0,
     "acer": 0.5,
-    "exactitud": 0.04142480211081794,
+    "exactitud": 0.14285714285714285,
     "auc": 0.5,
-    "n_reales": 314,
-    "n_ataques": 7266,
+    "n_reales": 27,
+    "n_ataques": 162,
     "matriz_confusion": [
       [
-        314,
+        27,
         0
       ],
       [
-        7266,
+        162,
         0
       ]
     ],
     "apcer_por_tipo": {
-      "pantalla": 1.0
+      "spoof": 1.0
     },
     "apcer_max_tipo": 1.0
   }

@@ -53,17 +53,12 @@ def main():
 
     manifest = pd.read_csv(config.MANIFEST_ROSTROS, keep_default_na=False)
 
-    es_lcc = manifest["fuente"] == "lcc"
-    sin_split = es_lcc & (manifest["split"] != "test")
-    proporciones_lcc = {"train": 1 - config.PROPORCION_VAL_LCC, "val": config.PROPORCION_VAL_LCC}
-    if sin_split.any():
-        manifest.loc[sin_split, "split"] = dividir_estratificado(
-            manifest[sin_split], proporciones_lcc, args.semilla)
-
-    es_propio = manifest["fuente"] == "propio"
-    if es_propio.any():
-        manifest.loc[es_propio, "split"] = dividir_estratificado(
-            manifest[es_propio], config.PROPORCION_SPLITS, args.semilla)
+    # lcc_eval ya viene con split "test" (test externo) y no se divide
+    for fuente in ["lcc", "propio"]:
+        de_fuente = manifest["fuente"] == fuente
+        if de_fuente.any():
+            manifest.loc[de_fuente, "split"] = dividir_estratificado(
+                manifest[de_fuente], config.PROPORCION_SPLITS, args.semilla)
 
     verificar_sin_fuga(manifest)
     manifest.to_csv(config.MANIFEST, index=False)

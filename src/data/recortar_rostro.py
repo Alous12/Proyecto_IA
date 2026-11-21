@@ -10,6 +10,7 @@ from src.data.imagenes import guardar_imagen, leer_imagen
 
 BASE_FUENTE = {
     "lcc": config.DIR_LCC,
+    "lcc_eval": config.DIR_LCC,
     "propio": config.DIR_FRAMES / "propio",
 }
 ANCHO_DETECCION = 640

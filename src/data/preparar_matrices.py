@@ -48,6 +48,9 @@ def main():
     manifest = manifest[manifest["fuente"] == args.fuente]
     if manifest.empty:
         raise SystemExit(f"No hay filas de la fuente '{args.fuente}' en manifest.csv")
+    if estadisticas_de == args.fuente and not (manifest["split"] == "train").any():
+        raise SystemExit(f"La fuente '{args.fuente}' no tiene train: usa --estadisticas_de "
+                         f"(por ejemplo --estadisticas_de lcc)")
 
     nombre = nombre_matrices(args.fuente, args.tamano, args.color, estadisticas_de)
     dir_salida = config.DIR_MATRICES / nombre

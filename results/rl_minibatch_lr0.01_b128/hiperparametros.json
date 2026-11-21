@@ -35,13 +35,13 @@
     "fuente": "lcc",
     "fuente_test": "lcc",
     "capas": "",
-    "peso_real": 5.847212165097755,
-    "epocas_corridas": 21,
-    "mejor_epoca": 6,
-    "error_train": 0.9254574511101116,
-    "error_val": 1.1086401257859728,
-    "val_acer": 0.3724394810262004,
-    "val_auc": 0.6971953598623901,
-    "segundos": 0.2
+    "peso_real": 6.734875444839858,
+    "epocas_corridas": 17,
+    "mejor_epoca": 2,
+    "error_train": 1.4184812753431622,
+    "error_val": 1.6785220482460708,
+    "val_acer": 0.29626756549109023,
+    "val_auc": 0.7515774864308904,
+    "segundos": 3.5
   }
 }

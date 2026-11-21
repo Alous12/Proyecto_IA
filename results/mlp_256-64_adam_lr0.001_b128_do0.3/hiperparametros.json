@@ -19,7 +19,7 @@
     "tamano": 64,
     "color": "gris",
     "semilla": 42,
-    "verbose": true,
+    "verbose": false,
     "nombre": null
   },
   "resumen": {
@@ -35,13 +35,13 @@
     "fuente": "lcc",
     "fuente_test": "lcc",
     "capas": "256-64",
-    "peso_real": 5.847212165097755,
+    "peso_real": 6.734875444839858,
     "epocas_corridas": 17,
     "mejor_epoca": 2,
-    "error_train": 0.7208764864578614,
-    "error_val": 1.0356579693749508,
-    "val_acer": 0.3132538650332487,
-    "val_auc": 0.7555877787334019,
-    "segundos": 3.1
+    "error_train": 0.7242276321244778,
+    "error_val": 1.9891703109662362,
+    "val_acer": 0.30656274009269124,
+    "val_auc": 0.7440432228803686,
+    "segundos": 489.5
   }
 }

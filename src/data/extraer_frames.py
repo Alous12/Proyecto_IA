@@ -10,10 +10,12 @@ from tqdm import tqdm
 from src import config
 from src.data.imagenes import guardar_imagen
 
+# carpeta -> (fuente, split). training + development se dividen después por persona;
+# evaluation es una fuente aparte (test externo).
 CARPETAS_LCC = {
-    "LCC_FASD_training": "",
-    "LCC_FASD_development": "",
-    "LCC_FASD_evaluation": "test",
+    "LCC_FASD_training": ("lcc", ""),
+    "LCC_FASD_development": ("lcc", ""),
+    "LCC_FASD_evaluation": ("lcc_eval", "test"),
 }
 PATRON_LCC = re.compile(r"^(?P<video>.+_id(?P<persona>\d+)_s\d+)_\d+$")
 
@@ -78,9 +80,11 @@ def registrar_propio(dir_propio, n_frames):
     return filas
 
 
-def registrar_lcc(dir_lcc):
+def registrar_lcc(dir_lcc, fuentes):
     filas = []
-    for carpeta, split in CARPETAS_LCC.items():
+    for carpeta, (fuente, split) in CARPETAS_LCC.items():
+        if fuente not in fuentes:
+            continue
         for clase in ["real", "spoof"]:
             directorio = dir_lcc / carpeta / clase
             if not directorio.exists():
@@ -98,10 +102,10 @@ def registrar_lcc(dir_lcc):
                 filas.append({
                     "ruta_frame": config.ruta_relativa(ruta),
                     "etiqueta": config.ETIQUETA_ATAQUE if es_ataque else config.ETIQUETA_REAL,
-                    "tipo_ataque": "pantalla" if es_ataque else "ninguno",
+                    "tipo_ataque": "spoof" if es_ataque else "ninguno",
                     "id_persona": id_persona,
                     "id_video": id_video,
-                    "fuente": "lcc",
+                    "fuente": fuente,
                     "split": split,
                 })
     return filas
@@ -118,8 +122,8 @@ def main():
 
     fuentes = config.FUENTES if args.fuente == "todas" else [args.fuente]
     filas = []
-    if "lcc" in fuentes:
-        filas += registrar_lcc(args.dir_lcc)
+    if "lcc" in fuentes or "lcc_eval" in fuentes:
+        filas += registrar_lcc(args.dir_lcc, fuentes)
     if "propio" in fuentes:
         filas += registrar_propio(args.dir_propio, args.n_frames)
     nuevo = pd.DataFrame(filas, columns=config.COLUMNAS_MANIFEST)

@@ -31,7 +31,7 @@ TIPOS_PROPIO = {
 }
 EXTENSIONES_VIDEO = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
 
-FUENTES = ["lcc", "propio"]
+FUENTES = ["lcc", "lcc_eval", "propio"]
 SPLITS = ["train", "val", "test"]
 
 SEMILLA = 42
@@ -45,7 +45,6 @@ TAMANO_MIN_ROSTRO = 0.15
 TAMANO_REGRESION = 64
 
 PROPORCION_SPLITS = {"train": 0.70, "val": 0.15, "test": 0.15}
-PROPORCION_VAL_LCC = 0.15
 
 
 def ruta_relativa(ruta):

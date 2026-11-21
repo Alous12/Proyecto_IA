@@ -38,6 +38,30 @@ data/raw/propio/pantalla/p01_1.mp4
 
 Usar el mismo `id_persona` para la misma persona en las tres carpetas (sin espacios).
 
+**Fuentes y división:**
+
+| Fuente | Origen | Splits |
+|---|---|---|
+| `lcc` | LCC FASD training + development | train/val/test por persona (70/15/15, estratificado por clase) |
+| `lcc_eval` | LCC FASD evaluation | solo `test` (test externo) |
+| `propio` | dataset propio | train/val/test por persona (70/15/15, estratificado por clase) |
+
+En LCC la persona y el video salen del nombre del archivo (`AA5742_id154_s0_112.png` →
+persona `154`, video `AA5742_id154_s0`). Las imágenes de evaluation no traen esos datos, así que
+cada imagen cuenta como un video; por eso el test de `lcc` sale de training + development (tiene
+varios frames por video y permite la métrica por video) y evaluation se usa aparte como
+`lcc_eval`: imágenes que el modelo nunca vio, normalizadas con las estadísticas de train de `lcc`.
+LCC no indica el tipo de ataque, así que sus ataques se marcan como `spoof`.
+
+Datos actuales (`python -m src.data.dividir_por_persona`):
+
+| Fuente | Split | Personas | Videos | Frames | Reales | Ataques |
+|---|---|---:|---:|---:|---:|---:|
+| `lcc` | train | 93 | 1,026 | 8,694 | 1,124 | 7,570 |
+| `lcc` | val | 19 | 119 | 1,042 | 257 | 785 |
+| `lcc` | test | 19 | 189 | 1,511 | 247 | 1,264 |
+| `lcc_eval` | test | – | 7,580 | 7,580 | 314 | 7,266 |
+
 ## 3. Preprocesamiento (ejecutar desde la raíz del repo, en orden)
 
 | Paso | Comando | Resultado |
@@ -46,8 +70,10 @@ Usar el mismo `id_persona` para la misma persona en las tres carpetas (sin espac
 | 2. Rostros | `python -m src.data.recortar_rostro` | `data/processed/manifest_rostros.csv`, recortes 224×224 |
 | 3. División | `python -m src.data.dividir_por_persona` | `data/processed/manifest.csv` con la columna `split` |
 | 4. Matrices | `python -m src.data.preparar_matrices --fuente lcc` | `data/processed/matrices/lcc_64_gris/*.npz` |
+| 5. Test externo | `python -m src.data.preparar_matrices --fuente lcc_eval --estadisticas_de lcc` | `data/processed/matrices/lcc_eval_64_gris_norm-lcc/test.npz` |
 
-`--fuente` acepta `lcc`, `propio` o `todas`. Si solo se procesa una fuente, las filas de la otra se conservan en el manifest.
+`--fuente` acepta `lcc`, `lcc_eval`, `propio` o `todas`. Si solo se procesa una fuente, las filas de las otras se conservan en el manifest.
+`lcc_eval` no tiene train, así que siempre necesita `--estadisticas_de lcc` (el paso 4 va antes).
 Para la prueba cruzada (entrenar con LCC y evaluar con el dataset propio):
 
 ```powershell
@@ -55,7 +81,8 @@ python -m src.data.preparar_matrices --fuente propio --estadisticas_de lcc
 ```
 
 Columnas de los manifests: `ruta_frame, etiqueta, tipo_ataque, id_persona, id_video, fuente, split`
-(`tipo_ataque` ∈ {`ninguno`, `impreso`, `pantalla`}; rutas relativas a la raíz, con `/`).
+(`tipo_ataque` ∈ {`ninguno`, `spoof`, `impreso`, `pantalla`}: `spoof` en LCC, `impreso`/`pantalla`
+en el dataset propio; rutas relativas a la raíz, con `/`).
 
 ## 4. Usar los datos en un modelo
 
@@ -86,8 +113,8 @@ por video (promedio de la probabilidad de los frames del video).
 
 ## 6. Exploración
 
-`notebooks/01_exploracion.ipynb`: cuántas personas, videos y frames hay por split y por
-tipo, el balance de clases y ejemplos de recortes.
+`notebooks/01_exploracion.ipynb`: cuántas personas, videos y frames hay por fuente y split,
+frames por video, el balance de clases y ejemplos de recortes.
 
 ## 7. Modelos y entrenamiento
 
@@ -119,6 +146,13 @@ arquitectura, dropout, L2, balance), registra cada corrida en `results/experimen
 dibuja las curvas de validación de cada grupo en `results/experimentos/` y elige el mejor modelo
 de cada tipo **por ACER en validación** (`results/mejores_modelos.json`).
 
+Test externo (entrenar con `lcc` y evaluar con `lcc_eval`; sin `--test_todo`, porque
+`lcc_eval` solo tiene test):
+
+```powershell
+python -m src.train --modelo mlp --capas 256 64 --dropout 0.3 --optimizador adam --lr 1e-3 --fuente lcc --fuente_test lcc_eval
+```
+
 Prueba cruzada (entrenar con LCC y evaluar con todo el dataset propio, normalizado con LCC):
 
 ```powershell
@@ -127,4 +161,5 @@ python -m src.train --modelo mlp --fuente_test propio --test_todo
 ```
 
 `notebooks/02_entrenamiento_colab.ipynb` hace lo mismo desde Colab (subir antes
-`data/processed/matrices/lcc_64_gris/` a Google Drive).
+`data/processed/matrices/lcc_64_gris/` a Google Drive, y `lcc_eval_64_gris_norm-lcc/` para el
+test externo).
