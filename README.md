@@ -103,8 +103,8 @@ guardar_predicciones("mlp", pd.concat([info_val, info_test]), prob_ataque)
 y luego:
 
 ```powershell
-python -m src.evaluate --modelo mlp          # results/mlp/metricas.json + gráficas
-python -m src.evaluate --todos               # todos los modelos + tabla comparativa
+python -m src.evaluate --modelo mlp          # results/experimentos/mlp/metricas.json + gráficas
+python -m src.evaluate --todos               # todos los modelos + results/resumen/comparacion_modelos.csv
 ```
 
 El umbral se elige en validación (APCER = BPCER) y se aplica en test. Se reportan APCER,
@@ -131,20 +131,30 @@ La clase real (minoritaria, ~15 % en LCC) se pondera en la BCE con `n_ataques / 
 (`--sin_balance` lo desactiva). Siempre se guardan los parámetros de la época con menor error de validación.
 
 ```powershell
-python -m src.verificar_gradiente        # backprop vs. gradiente numérico -> results/verificacion_gradiente.txt
+python -m src.verificar_gradiente        # backprop vs. gradiente numérico -> results/resumen/verificacion_gradiente.txt
 
 python -m src.train --modelo regresion_logistica --optimizador adam --lr 1e-3 --lote 128
 python -m src.train --modelo mlp --capas 256 64 --dropout 0.3 --optimizador adam --lr 1e-3 --paciencia 15
 
-python -m src.experimentos               # barrido de hiperparámetros -> results/experimentos.csv
+python -m src.experimentos               # barrido de hiperparámetros -> results/resumen/
 ```
 
-`src.train` guarda en `results/<nombre>/` los parámetros, `historial.csv` (error por época en train
-y validación), `curva_error.png` e `hiperparametros.json`, y llama a `src.evaluate` (sección 5).
+`src.train` guarda en `results/experimentos/<nombre>/` los parámetros, `historial.csv` (error por
+época en train y validación), `curva_error.png` e `hiperparametros.json` (con la huella de los datos:
+fuente, fuente_test y SHA-256 de cada `.npz`), y llama a `src.evaluate` (sección 5).
 `src.experimentos` cambia un factor a la vez (optimizador, tasa de aprendizaje, tamaño de lote,
-arquitectura, dropout, L2, balance), registra cada corrida en `results/experimentos.csv`/`.md`,
-dibuja las curvas de validación de cada grupo en `results/experimentos/` y elige el mejor modelo
-de cada tipo **por ACER en validación** (`results/mejores_modelos.json`).
+arquitectura, dropout, L2, balance). Una corrida ya hecha solo se reutiliza si su huella coincide
+con los datos actuales. Después reconstruye, leyendo las carpetas, `results/resumen/experimentos.csv`/`.md`,
+las curvas de validación de cada grupo (`results/resumen/figuras/`) y `results/resumen/mejores_modelos.json`
+con el mejor modelo de cada tipo **por ACER en validación**. Esos dos modelos se evalúan también con
+el test externo `lcc_eval` (si existen sus matrices) y se copian a `results/finales/<modelo>/`.
+
+```
+results/
+├── experimentos/<corrida>/   una carpeta por corrida (en git: .json y .csv)
+├── finales/                  regresion_logistica/ y mlp/ (+ lcc_eval/), completos en git
+└── resumen/                  experimentos.csv/.md, mejores_modelos.json, verificacion_gradiente.txt, figuras/
+```
 
 Test externo (entrenar con `lcc` y evaluar con `lcc_eval`; sin `--test_todo`, porque
 `lcc_eval` solo tiene test):

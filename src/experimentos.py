@@ -2,38 +2,33 @@
 
     python -m src.experimentos                      # todos los grupos
     python -m src.experimentos --grupo optimizador  # solo un grupo
-    python -m src.experimentos --rehacer            # vuelve a correr aunque ya estén en el CSV
+    python -m src.experimentos --rehacer            # vuelve a correr aunque ya estén hechas
 
-Cada corrida se registra en results/experimentos.csv (y .md). Por cada grupo se guarda una
-figura con las curvas de validación en results/experimentos/<grupo>.png. El mejor modelo de
-cada tipo se elige por ACER en validación (no por test) y se guarda en
-results/mejores_modelos.json.
+Una corrida se reutiliza solo si su hiperparametros.json tiene la misma huella de datos
+(fuente, fuente_test y SHA-256 de cada .npz) que los datos actuales; si no, se vuelve a correr.
+results/resumen/experimentos.csv (y .md), las figuras por grupo (results/resumen/figuras/) y
+results/resumen/mejores_modelos.json se reconstruyen en cada ejecución leyendo las carpetas de
+las corridas válidas (results/experimentos/<corrida>/).
+
+El mejor modelo de cada tipo se elige por ACER en validación (no por test). Con sus parámetros
+ya entrenados se predice el test externo lcc_eval (si existen sus matrices) y esas métricas se
+agregan a mejores_modelos.json. Los dos modelos se copian a results/finales/<modelo>/.
 """
 import argparse
-import json
+import shutil
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import pandas as pd
 
-from src import config
-from src.evaluate import COLOR_TEXTO, _estilo
-from src.train import HIPERPARAMETROS_POR_DEFECTO, ejecutar, nombre_experimento
-
-RUTA_CSV = config.DIR_RESULTS / "experimentos.csv"
-DIR_FIGURAS = config.DIR_RESULTS / "experimentos"
-PALETA = ["#2a78d6", "#eb6834", "#1f9e74", "#8e5bd1", "#c9a227", "#d6457a", "#52514e"]
+from src import config, graficas
+from src.evaluate import tabla_markdown
+from src.train import (completar_hiperparametros, ejecutar, evaluar_parametros, huella_datos,
+                       nombre_experimento, resumen_test, sha256_archivo)
 
 BASE_RL = {"modelo": "regresion_logistica", "optimizador": "adam", "lr": 1e-3, "lote": 128,
            "epocas": 60, "paciencia": 15}
 BASE_MLP = {**BASE_RL, "modelo": "mlp", "capas": [256, 64], "dropout": 0.3}
 EPOCAS_GD = 400
-
-
-def variantes(base, **cambios):
-    return [{**base, **dict(zip(cambios, valores))} for valores in zip(*cambios.values())]
+FUENTE_EXTERNA = "lcc_eval"
 
 
 def con_epocas(h):
@@ -71,60 +66,58 @@ GRUPOS = {
 
 
 def completar(h):
-    return {**HIPERPARAMETROS_POR_DEFECTO, "fuente_test": "lcc", **h, "verbose": False}
+    return completar_hiperparametros({"fuente_test": "lcc", **h, "verbose": False})
 
 
-def etiquetas_cortas(nombres):
-    """Deja solo las partes del nombre que cambian entre las corridas del panel."""
-    partes = [n.split("_") for n in nombres]
-    comunes = set.intersection(*(set(p) for p in partes)) if len(partes) > 1 else set()
-    return [" ".join(t for t in p if t not in comunes) or n for p, n in zip(partes, nombres)]
+def corridas_del_grupo(grupo):
+    """Nombres (sin repetir) y hiperparámetros de las corridas de un grupo."""
+    corridas = {}
+    for h in GRUPOS[grupo]:
+        h = completar(h)
+        corridas.setdefault(nombre_experimento(h), h)
+    return corridas
+
+
+def leer_corrida(nombre, huella):
+    """Devuelve el hiperparametros.json de la corrida si es válida para los datos actuales.
+
+    Devuelve None si no existe, si falta metricas.json o si su huella no coincide."""
+    ruta = config.ruta_corrida(nombre, "hiperparametros.json")
+    if huella is None or not ruta.exists() or not config.ruta_corrida(nombre, "metricas.json").exists():
+        return None
+    guardado = config.leer_json(ruta)
+    return guardado if guardado.get("huella") == huella else None
+
+
+def reconstruir_tabla():
+    """Arma la tabla de todas las corridas válidas leyendo sus carpetas."""
+    filas, nombres_validos, ignoradas, sin_correr = [], {}, set(), set()
+    for grupo in GRUPOS:
+        nombres_validos[grupo] = []
+        for nombre, h in corridas_del_grupo(grupo).items():
+            guardado = leer_corrida(nombre, huella_datos(h))
+            if guardado is None:
+                (ignoradas if config.ruta_corrida(nombre).exists() else sin_correr).add(nombre)
+                continue
+            metricas = config.leer_json(config.ruta_corrida(nombre, "metricas.json"))
+            filas.append({"grupo": grupo, **guardado["resumen"], **resumen_test(metricas)})
+            nombres_validos[grupo].append(nombre)
+    return pd.DataFrame(filas), nombres_validos, ignoradas, sin_correr
 
 
 def graficar_grupo(grupo, nombres):
-    historiales = {n: pd.read_csv(config.DIR_RESULTS / n / "historial.csv") for n in nombres
-                   if (config.DIR_RESULTS / n / "historial.csv").exists()}
-    paneles = [(titulo, [n for n in historiales if n.startswith(prefijo + "_")])
-               for prefijo, titulo in [("rl", "Regresión logística"), ("mlp", "MLP")]]
-    paneles = [(t, ns) for t, ns in paneles if ns]
-    if not paneles:
-        return
-
-    fig, ejes = plt.subplots(1, len(paneles), figsize=(9 * len(paneles), 4.5), squeeze=False)
-    for ax, (titulo, ns) in zip(ejes[0], paneles):
-        _estilo(ax)
-        valores = pd.concat([historiales[n]["error_val"] for n in ns])
-        techo = min(valores.max(), valores.quantile(0.85) * 1.25)
-        for i, (nombre, etiqueta) in enumerate(zip(ns, etiquetas_cortas(ns))):
-            h = historiales[nombre]
-            if h["error_val"].max() > techo:
-                etiqueta += "  (sale del gráfico)"
-            ax.plot(h["epoca"], h["error_val"], linewidth=1.6, color=PALETA[i % len(PALETA)],
-                    linestyle="-" if i < len(PALETA) else (0, (4, 2)), label=etiqueta)
-        ax.set_ylim(valores.min() * 0.95, techo)
-        if any("_gd_" in n for n in ns):
-            ax.set_xscale("log")
-        ax.set_xlabel("Época", color=COLOR_TEXTO)
-        ax.set_ylabel("Error de validación", color=COLOR_TEXTO)
-        ax.set_title(titulo, loc="left")
-        ax.legend(frameon=False, fontsize=7, loc="upper left", bbox_to_anchor=(1.0, 1.0))
-    fig.suptitle(f"Experimentos: {grupo.replace('_', ' ')}")
-    fig.tight_layout()
-    DIR_FIGURAS.mkdir(parents=True, exist_ok=True)
-    fig.savefig(DIR_FIGURAS / f"{grupo}.png", dpi=150)
-    plt.close(fig)
+    historiales = {n: pd.read_csv(config.ruta_corrida(n, "historial.csv")) for n in nombres
+                   if config.ruta_corrida(n, "historial.csv").exists()}
+    graficas.graficar_grupo(grupo, historiales, config.DIR_FIGURAS_GRUPOS / f"{grupo}.png")
 
 
 def guardar_tabla(tabla):
     tabla = tabla.sort_values(["grupo", "modelo", "val_acer"])
-    tabla.to_csv(RUTA_CSV, index=False, float_format="%.4f")
+    config.DIR_RESUMEN.mkdir(parents=True, exist_ok=True)
+    tabla.to_csv(config.RUTA_EXPERIMENTOS_CSV, index=False, float_format="%.4f")
     columnas = ["grupo", "nombre", "mejor_epoca", "error_train", "error_val", "val_acer", "val_auc",
                 "test_acer_frame", "test_auc_frame", "segundos"]
-    lineas = ["| " + " | ".join(columnas) + " |", "|" + "---|" * len(columnas)]
-    for _, fila in tabla[columnas].iterrows():
-        celdas = [f"{v:.3f}" if isinstance(v, float) else str(v) for v in fila]
-        lineas.append("| " + " | ".join(celdas) + " |")
-    RUTA_CSV.with_suffix(".md").write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    config.RUTA_EXPERIMENTOS_MD.write_text(tabla_markdown(tabla[columnas]), encoding="utf-8")
 
 
 def elegir_mejores(tabla):
@@ -132,59 +125,92 @@ def elegir_mejores(tabla):
     for modelo, filas in tabla.drop_duplicates("nombre").groupby("modelo"):
         mejor = filas.sort_values(["val_acer", "error_val"]).iloc[0]
         mejores[modelo] = {k: (v.item() if hasattr(v, "item") else v) for k, v in mejor.items()}
-    with open(config.DIR_RESULTS / "mejores_modelos.json", "w", encoding="utf-8") as f:
-        json.dump(mejores, f, indent=2, ensure_ascii=False)
     return mejores
+
+
+def evaluar_test_externo(nombre):
+    """Predice lcc_eval con los parámetros ya entrenados de `nombre` (no reentrena). Devuelve sus
+    métricas, o None si no existen las matrices de lcc_eval."""
+    guardado = config.leer_json(config.ruta_corrida(nombre, "hiperparametros.json"))
+    h = {**guardado["hiperparametros"], "fuente_test": FUENTE_EXTERNA, "test_todo": False,
+         "nombre": None, "verbose": False}
+    huella = huella_datos(h)
+    if huella is None:
+        print(f"[aviso] no existen las matrices de {FUENTE_EXTERNA}; se omite el test externo de {nombre}")
+        return None
+    ruta_parametros = config.ruta_corrida(nombre, "parametros.npz")
+    if not ruta_parametros.exists():
+        # parametros.npz no se versiona en experimentos/: se regenera (misma semilla -> mismo modelo)
+        ejecutar({**guardado["hiperparametros"], "verbose": False})
+    huella["parametros"] = sha256_archivo(ruta_parametros)
+    nombre_externo = nombre_experimento(h)
+    if leer_corrida(nombre_externo, huella) is None:
+        evaluar_parametros(h, ruta_parametros, nombre_externo, huella)
+    metricas = config.leer_json(config.ruta_corrida(nombre_externo, "metricas.json"))
+    return {"nombre": nombre_externo, **resumen_test(metricas)}
 
 
 def main():
     parser = argparse.ArgumentParser(description="Barrido de hiperparámetros")
     parser.add_argument("--grupo", nargs="+", choices=list(GRUPOS), default=list(GRUPOS))
-    parser.add_argument("--rehacer", action="store_true")
+    parser.add_argument("--rehacer", action="store_true",
+                        help="vuelve a correr aunque la huella de datos coincida")
     args = parser.parse_args()
 
-    tabla = pd.read_csv(RUTA_CSV, keep_default_na=False) if RUTA_CSV.exists() else pd.DataFrame()
-    hechos = {}
-    if not tabla.empty:
-        hechos = {n: fila for n, fila in tabla.drop_duplicates("nombre").set_index("nombre").iterrows()}
-
+    corridas_hechas = set()
     for grupo in args.grupo:
-        nombres = []
-        for h in GRUPOS[grupo]:
-            h = completar(h)
-            nombre = nombre_experimento(h)
-            if nombre in nombres:
+        for nombre, h in corridas_del_grupo(grupo).items():
+            if nombre in corridas_hechas:
                 continue
-            nombres.append(nombre)
-            ya_en_grupo = not tabla.empty and ((tabla["nombre"] == nombre) & (tabla["grupo"] == grupo)).any()
-            if not args.rehacer and ya_en_grupo:
+            corridas_hechas.add(nombre)
+            if not args.rehacer and leer_corrida(nombre, huella_datos(h)) is not None:
                 continue
-            if not args.rehacer and nombre in hechos:
-                fila = {"grupo": grupo, "nombre": nombre, **hechos[nombre].drop("grupo").to_dict()}
-            else:
-                fila = {"grupo": grupo, **ejecutar(h)}
-                print(f"[{grupo}] {nombre}: val ACER {fila['val_acer']:.3f}, "
-                      f"test ACER {fila['test_acer_frame']:.3f} ({fila['segundos']} s)")
-            hechos[nombre] = pd.Series(fila).drop("nombre")
-            if not tabla.empty:
-                tabla = tabla[~((tabla["nombre"] == nombre) & (tabla["grupo"] == grupo))]
-            tabla = pd.concat([tabla, pd.DataFrame([fila])], ignore_index=True)
-            guardar_tabla(tabla)
-        graficar_grupo(grupo, nombres)
+            fila = ejecutar(h)
+            print(f"[{grupo}] {nombre}: val ACER {fila['val_acer']:.3f}, "
+                  f"test ACER {fila['test_acer_frame']:.3f} ({fila['segundos']} s)")
 
-    tabla = pd.read_csv(RUTA_CSV)
+    tabla, nombres_validos, ignoradas, sin_correr = reconstruir_tabla()
+    if ignoradas:
+        print(f"\n[aviso] {len(ignoradas)} corrida(s) ignorada(s): sin huella o con datos distintos "
+              f"a los actuales (vuelve a correr su grupo para actualizarlas)")
+    if sin_correr:
+        print(f"[aviso] {len(sin_correr)} corrida(s) de los grupos todavía sin correr")
+    if tabla.empty:
+        print("No hay corridas válidas para los datos actuales; no se actualizan las tablas.")
+        return
+
+    guardar_tabla(tabla)
+    for grupo, nombres in nombres_validos.items():
+        if nombres:
+            graficar_grupo(grupo, nombres)
+        else:
+            (config.DIR_FIGURAS_GRUPOS / f"{grupo}.png").unlink(missing_ok=True)
+
     print("\nMejor configuración de cada grupo (por ACER en validación):")
     mejores_grupo = tabla.sort_values("val_acer").groupby(["grupo", "modelo"]).head(1)
     print(mejores_grupo[["grupo", "modelo", "nombre", "val_acer", "test_acer_frame"]]
           .sort_values(["grupo", "modelo"]).to_string(index=False))
 
     mejores = elegir_mejores(tabla)
+    for fila in mejores.values():
+        fila[FUENTE_EXTERNA] = evaluar_test_externo(fila["nombre"])
+    config.guardar_json(config.RUTA_MEJORES_MODELOS, mejores)
+
     print("\nModelos finales (elegidos por validación):")
     for modelo, fila in mejores.items():
+        # Copia la corrida elegida (y su test externo, si existe) a results/finales/<modelo>/
+        destino = config.ruta_final(modelo)
+        shutil.rmtree(destino, ignore_errors=True)
+        shutil.copytree(config.ruta_corrida(fila["nombre"]), destino)
+        externo = fila[FUENTE_EXTERNA]
+        if externo:
+            shutil.copytree(config.ruta_corrida(externo["nombre"]), destino / FUENTE_EXTERNA)
+        texto_externo = (f"  {FUENTE_EXTERNA} ACER {externo['test_acer_frame']:.3f} "
+                         f"AUC {externo['test_auc_frame']:.3f}" if externo else "")
         print(f"  {modelo}: {fila['nombre']}  val ACER {fila['val_acer']:.3f}  "
-              f"test ACER {fila['test_acer_frame']:.3f}  test AUC {fila['test_auc_frame']:.3f}")
-    print(f"\nGuardado {config.ruta_relativa(RUTA_CSV)}, experimentos.md, "
-          f"experimentos/*.png y mejores_modelos.json")
+              f"test ACER {fila['test_acer_frame']:.3f}  test AUC {fila['test_auc_frame']:.3f}{texto_externo}")
+    print(f"\nGuardado en {config.ruta_relativa(config.DIR_RESUMEN)}/ (tablas, figuras y "
+          f"mejores_modelos.json, {len(tabla)} filas) y {config.ruta_relativa(config.DIR_FINALES)}/")
 
 
 if __name__ == "__main__":

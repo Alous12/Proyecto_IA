@@ -2,20 +2,11 @@ import argparse
 
 import cv2
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
 from src import config
+from src.data.dataset import COLUMNAS_INFO, leer_manifest, nombre_matrices  # también re-exporta
 from src.data.imagenes import leer_imagen
-
-COLUMNAS_INFO = ["ruta_frame", "id_video", "id_persona", "tipo_ataque", "fuente", "split"]
-
-
-def nombre_matrices(fuente, tamano=config.TAMANO_REGRESION, color="gris", estadisticas_de=None):
-    nombre = f"{fuente}_{tamano}_{color}"
-    if estadisticas_de and estadisticas_de != fuente:
-        nombre += f"_norm-{estadisticas_de}"
-    return nombre
 
 
 def imagen_a_vector(ruta_rel, tamano, color):
@@ -44,7 +35,7 @@ def main():
     args = parser.parse_args()
     estadisticas_de = args.estadisticas_de or args.fuente
 
-    manifest = pd.read_csv(config.MANIFEST, keep_default_na=False)
+    manifest = leer_manifest(config.MANIFEST)
     manifest = manifest[manifest["fuente"] == args.fuente]
     if manifest.empty:
         raise SystemExit(f"No hay filas de la fuente '{args.fuente}' en manifest.csv")

@@ -4,7 +4,7 @@
 
 Se usa un ejemplo pequeño en float64. Un error relativo < 1e-7 indica que las derivadas
 están bien; > 1e-4 indica casi seguro un error. El resultado se guarda en
-results/verificacion_gradiente.txt como evidencia para el documento.
+results/resumen/verificacion_gradiente.txt como evidencia para el documento.
 """
 import numpy as np
 
@@ -94,32 +94,37 @@ def verificar_mlp(X, y, pesos, l2, capas_ocultas, prob_dropout):
                     f"peso_real = {pesos.max():.1f})", analitico, numerico)
 
 
-def main():
+def casos():
+    """Los 5 casos verificados: nombre -> (líneas de texto, error relativo total)."""
     X, y = datos_de_prueba()
     pesos = pesos_por_clase(y, peso_real=2.0)
+    return {
+        "rl": verificar_regresion_logistica(X, y, np.ones_like(y), 0.0),
+        "rl_l2_pesos": verificar_regresion_logistica(X, y, pesos, 0.1),
+        "mlp": verificar_mlp(X, y, np.ones_like(y), 0.0, [5], 0.0),
+        "mlp_l2_pesos": verificar_mlp(X, y, pesos, 0.1, [5, 4], 0.0),
+        "mlp_dropout": verificar_mlp(X, y, pesos, 0.1, [5, 4], 0.3),
+    }
 
-    casos = [
-        verificar_regresion_logistica(X, y, np.ones_like(y), 0.0),
-        verificar_regresion_logistica(X, y, pesos, 0.1),
-        verificar_mlp(X, y, np.ones_like(y), 0.0, [5], 0.0),
-        verificar_mlp(X, y, pesos, 0.1, [5, 4], 0.0),
-        verificar_mlp(X, y, pesos, 0.1, [5, 4], 0.3),
-    ]
+
+def main():
+    X, _ = datos_de_prueba()
+    resultados = list(casos().values())
 
     encabezado = [f"Verificación de gradiente: diferencias centrales, epsilon = {EPSILON}, "
                   f"{X.shape[0]} ejemplos con {X.shape[1]} entradas, float64.",
                   f"Error relativo = ||g_backprop - g_numerico|| / (||g_backprop|| + ||g_numerico||); "
                   f"OK si < {UMBRAL_OK:g}."]
-    lineas = encabezado + [l for caso, _ in casos for l in caso]
+    lineas = encabezado + [l for caso, _ in resultados for l in caso]
     texto = "\n".join(lineas)
     print(texto)
 
-    config.DIR_RESULTS.mkdir(parents=True, exist_ok=True)
-    ruta = config.DIR_RESULTS / "verificacion_gradiente.txt"
+    ruta = config.RUTA_VERIFICACION_GRADIENTE
+    ruta.parent.mkdir(parents=True, exist_ok=True)
     ruta.write_text(texto + "\n", encoding="utf-8")
     print(f"\nGuardado {config.ruta_relativa(ruta)}")
 
-    if any(total >= UMBRAL_OK for _, total in casos):
+    if any(total >= UMBRAL_OK for _, total in resultados):
         raise SystemExit(1)
 
 

@@ -1,9 +1,9 @@
 import argparse
 
 import numpy as np
-import pandas as pd
 
 from src import config
+from src.data.dataset import leer_manifest
 
 
 def repartir_personas(personas, proporciones, generador):
@@ -51,7 +51,7 @@ def main():
     parser.add_argument("--semilla", type=int, default=config.SEMILLA)
     args = parser.parse_args()
 
-    manifest = pd.read_csv(config.MANIFEST_ROSTROS, keep_default_na=False)
+    manifest = leer_manifest(config.MANIFEST_ROSTROS)
 
     # lcc_eval ya viene con split "test" (test externo) y no se divide
     for fuente in ["lcc", "propio"]:

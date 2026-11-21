@@ -1,12 +1,6 @@
 import numpy as np
 
 
-def generar_lotes(n, tam_lote, generador):
-    indices = generador.permutation(n)
-    for inicio in range(0, n, tam_lote):
-        yield indices[inicio:inicio + tam_lote]
-
-
 class GradienteDescendente:
     """Descenso de gradiente por lote completo: se usa con tam_lote = N (un paso por época)."""
     nombre = "gd"

@@ -3,7 +3,6 @@ import time
 import numpy as np
 
 from src import config
-from src.models.optimizadores import generar_lotes
 
 EPS = 1e-7
 
@@ -64,6 +63,12 @@ def penalizacion_l2(params, l2, n):
 
 def copiar_parametros(params):
     return {k: v.copy() for k, v in params.items()}
+
+
+def generar_lotes(n, tam_lote, generador):
+    indices = generador.permutation(n)
+    for inicio in range(0, n, tam_lote):
+        yield indices[inicio:inicio + tam_lote]
 
 
 def bucle_entrenamiento(params, paso_gradiente, funcion_error, X, y, X_val, y_val,

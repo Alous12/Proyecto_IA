@@ -1,11 +1,11 @@
 import argparse
-from pathlib import Path
 
 import cv2
 import pandas as pd
 from tqdm import tqdm
 
 from src import config
+from src.data.dataset import fusionar_manifest, leer_manifest
 from src.data.imagenes import guardar_imagen, leer_imagen
 
 BASE_FUENTE = {
@@ -74,7 +74,7 @@ def main():
                         help="vuelve a procesar aunque el recorte ya exista")
     args = parser.parse_args()
 
-    frames = pd.read_csv(config.MANIFEST_FRAMES, keep_default_na=False)
+    frames = leer_manifest(config.MANIFEST_FRAMES)
     fuentes = config.FUENTES if args.fuente == "todas" else [args.fuente]
     a_procesar = frames[frames["fuente"].isin(fuentes)]
 
@@ -95,11 +95,8 @@ def main():
         nueva["ruta_frame"] = config.ruta_relativa(ruta_salida)
         filas.append(nueva)
 
-    nuevo = pd.DataFrame(filas, columns=config.COLUMNAS_MANIFEST)
-    if config.MANIFEST_ROSTROS.exists():
-        anterior = pd.read_csv(config.MANIFEST_ROSTROS, keep_default_na=False)
-        anterior = anterior[~anterior["fuente"].isin(fuentes)]
-        nuevo = pd.concat([anterior, nuevo], ignore_index=True)
+    nuevo = fusionar_manifest(config.MANIFEST_ROSTROS,
+                              pd.DataFrame(filas, columns=config.COLUMNAS_MANIFEST), fuentes)
     nuevo.to_csv(config.MANIFEST_ROSTROS, index=False)
 
     print(f"\nGuardado {config.ruta_relativa(config.MANIFEST_ROSTROS)} ({len(nuevo)} rostros)")

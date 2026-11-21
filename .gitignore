@@ -4,9 +4,15 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# Salidas pesadas del entrenamiento (se regeneran con src.train / src.experimentos)
-results/*/parametros.npz
-results/*/predicciones.csv
+# Corridas del barrido: se versionan sus .json y .csv (evidencia); las figuras, los parámetros
+# y las predicciones se regeneran con src.train / src.experimentos. finales/ y resumen/ se
+# versionan completos.
+results/experimentos/*/*.png
+results/experimentos/*/parametros.npz
+results/experimentos/*/predicciones.csv
+
+# Carpetas temporales de tests/regresion.py
+tests/_salida_temporal/
 
 # Entorno virtual y caché de Python
 .venv/

@@ -8,6 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from src import config
+from src.data.dataset import fusionar_manifest
 from src.data.imagenes import guardar_imagen
 
 # carpeta -> (fuente, split). training + development se dividen después por persona;
@@ -126,12 +127,8 @@ def main():
         filas += registrar_lcc(args.dir_lcc, fuentes)
     if "propio" in fuentes:
         filas += registrar_propio(args.dir_propio, args.n_frames)
-    nuevo = pd.DataFrame(filas, columns=config.COLUMNAS_MANIFEST)
-
-    if config.MANIFEST_FRAMES.exists():
-        anterior = pd.read_csv(config.MANIFEST_FRAMES, keep_default_na=False)
-        anterior = anterior[~anterior["fuente"].isin(fuentes)]
-        nuevo = pd.concat([anterior, nuevo], ignore_index=True)
+    nuevo = fusionar_manifest(config.MANIFEST_FRAMES,
+                              pd.DataFrame(filas, columns=config.COLUMNAS_MANIFEST), fuentes)
 
     config.MANIFEST_FRAMES.parent.mkdir(parents=True, exist_ok=True)
     nuevo.to_csv(config.MANIFEST_FRAMES, index=False)
