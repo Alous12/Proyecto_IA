@@ -1,33 +1,17 @@
 import numpy as np
 
 
-def generar_lotes(n, tam_lote, generador):
-    indices = generador.permutation(n)
-    for inicio in range(0, n, tam_lote):
-        yield indices[inicio:inicio + tam_lote]
-
-
 class GradienteDescendente:
-    """Descenso de gradiente por lote completo: se usa con tam_lote = N (un paso por época)."""
-    nombre = "gd"
-    usa_lote_completo = True
-
-    def __init__(self, tasa_aprendizaje):
+    def __init__(self, tasa_aprendizaje, usa_lote_completo=True):
         self.tasa_aprendizaje = tasa_aprendizaje
+        self.usa_lote_completo = usa_lote_completo
 
     def actualizar(self, params, gradientes):
         for k in params:
             params[k] -= self.tasa_aprendizaje * gradientes[k]
 
 
-class Minibatch(GradienteDescendente):
-    """Misma regla de actualización, pero un paso por cada minibatch barajado."""
-    nombre = "minibatch"
-    usa_lote_completo = False
-
-
 class Adam:
-    nombre = "adam"
     usa_lote_completo = False
 
     def __init__(self, tasa_aprendizaje, beta1=0.9, beta2=0.999, epsilon=1e-8):
@@ -49,10 +33,7 @@ class Adam:
             params[k] -= self.tasa_aprendizaje * m_corregido / (np.sqrt(v_corregido) + self.epsilon)
 
 
-OPTIMIZADORES = {"gd": GradienteDescendente, "minibatch": Minibatch, "adam": Adam}
-
-
 def crear_optimizador(nombre, tasa_aprendizaje):
-    if nombre not in OPTIMIZADORES:
-        raise ValueError(f"Optimizador desconocido: {nombre}. Opciones: {list(OPTIMIZADORES)}")
-    return OPTIMIZADORES[nombre](tasa_aprendizaje)
+    if nombre == "adam":
+        return Adam(tasa_aprendizaje)
+    return GradienteDescendente(tasa_aprendizaje, usa_lote_completo=(nombre == "gd"))

@@ -24,8 +24,7 @@
     ],
     "apcer_por_tipo": {
       "spoof": 0.5
-    },
-    "apcer_max_tipo": 0.5
+    }
   },
   "por_video": {
     "umbral": 0.42500201165676116,
@@ -48,7 +47,6 @@
     ],
     "apcer_por_tipo": {
       "spoof": 0.5493827160493827
-    },
-    "apcer_max_tipo": 0.5493827160493827
+    }
   }
 }
