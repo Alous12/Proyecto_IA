@@ -10,3 +10,5 @@ matplotlib>=3.8
 tqdm>=4.66
 kaggle>=1.6
 ipykernel>=6.29
+# CNN (notebooks/03_cnn.ipynb). En Windows nativo corre solo en CPU (sin GPU)
+tensorflow>=2.20

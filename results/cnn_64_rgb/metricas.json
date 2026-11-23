@@ -1,0 +1,54 @@
+{
+  "modelo": "cnn_64_rgb",
+  "fuente_val": "lcc",
+  "fuente_test": "lcc",
+  "criterio_umbral": "APCER = BPCER en validación",
+  "por_frame": {
+    "umbral": 0.5067554712295532,
+    "apcer": 0.27531645569620256,
+    "bpcer": 0.2591093117408907,
+    "acer": 0.2672128837185466,
+    "exactitud": 0.7273328921244209,
+    "auc": 0.8254400912212372,
+    "n_reales": 247,
+    "n_ataques": 1264,
+    "matriz_confusion": [
+      [
+        183,
+        64
+      ],
+      [
+        348,
+        916
+      ]
+    ],
+    "apcer_por_tipo": {
+      "spoof": 0.27531645569620256
+    },
+    "apcer_max_tipo": 0.27531645569620256
+  },
+  "por_video": {
+    "umbral": 0.5047945082187653,
+    "apcer": 0.22839506172839505,
+    "bpcer": 0.25925925925925924,
+    "acer": 0.24382716049382713,
+    "exactitud": 0.7671957671957672,
+    "auc": 0.8333333333333334,
+    "n_reales": 27,
+    "n_ataques": 162,
+    "matriz_confusion": [
+      [
+        20,
+        7
+      ],
+      [
+        37,
+        125
+      ]
+    ],
+    "apcer_por_tipo": {
+      "spoof": 0.22839506172839505
+    },
+    "apcer_max_tipo": 0.22839506172839505
+  }
+}

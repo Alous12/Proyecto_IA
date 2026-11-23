@@ -3,11 +3,13 @@
     python -m src.train --modelo regresion_logistica --optimizador adam --lr 1e-3 --lote 128
     python -m src.train --modelo mlp --capas 256 64 --dropout 0.3 --optimizador adam --lr 1e-3
 
+    python -m src.train --modelo cnn                        # Keras, rostros a color de 64x64
+
 Prueba cruzada (entrenar con LCC, evaluar con todo el dataset propio):
     python -m src.train --modelo mlp --fuente_test propio --test_todo
 
-Salida en results/<nombre>/: parametros.npz, historial.csv, curva_error.png,
-hiperparametros.json, predicciones.csv, metricas.json y las gráficas de evaluate.
+Salida en results/<nombre>/: parametros.npz (modelo.keras en la CNN), historial.csv,
+curva_error.png, hiperparametros.json, predicciones.csv, metricas.json y las gráficas de evaluate.
 """
 import argparse
 import json
@@ -28,11 +30,21 @@ from src.models import mlp, regresion_logistica
 from src.models.funciones_comunes import calcular_peso_real
 from src.models.optimizadores import crear_optimizador
 
+# La CNN (src.models.cnn) se importa solo cuando se usa, para no exigir TensorFlow a los modelos de NumPy
 MODELOS = {"regresion_logistica": regresion_logistica, "mlp": mlp}
-ABREVIATURA = {"regresion_logistica": "rl", "mlp": "mlp"}
+ABREVIATURA = {"regresion_logistica": "rl", "mlp": "mlp", "cnn": "cnn"}
+
+# Valores por defecto de la CNN (los del notebook 03); se pueden cambiar con --epocas, --paciencia, etc.
+HIPERPARAMETROS_CNN = {"epocas": 20, "paciencia": 5}
 
 
 def nombre_experimento(h):
+    if h["modelo"] == "cnn":
+        partes = ["cnn", str(h["tamano"]), h["color"]]
+        if h["fuente_test"] != h["fuente"]:
+            partes.append(f"test-{h['fuente_test']}")
+        return "_".join(partes)
+
     partes = [ABREVIATURA[h["modelo"]]]
     if h["modelo"] == "mlp":
         partes.append("-".join(str(c) for c in h["capas"]))
@@ -70,6 +82,11 @@ def cargar_conjuntos(h):
 
 
 def entrenar_modelo(h, X, y, X_val, y_val, peso_real):
+    if h["modelo"] == "cnn":
+        from src.models import cnn
+        return cnn.entrenar(X, y, X_val, y_val, epocas=h["epocas"], tam_lote=h["lote"],
+                            peso_real=peso_real, tasa_aprendizaje=h["lr"], paciencia=h["paciencia"],
+                            semilla=h["semilla"], verbose=h["verbose"])
     optimizador = crear_optimizador(h["optimizador"], h["lr"])
     tam_lote = len(y) if optimizador.usa_lote_completo else h["lote"]
     comunes = dict(epocas=h["epocas"], tam_lote=tam_lote, peso_real=peso_real, l2=h["l2"],
@@ -101,6 +118,10 @@ def graficar_curva(historial, mejor_epoca, nombre, ruta):
 
 def ejecutar(h):
     """Entrena y evalúa un experimento descrito por el diccionario h. Devuelve un resumen."""
+    if h.get("modelo") == "cnn":
+        # La red espera rostros a color de 64x64; usa Adam de Keras y dropout fijo de 0.3
+        h = {**HIPERPARAMETROS_POR_DEFECTO, **HIPERPARAMETROS_CNN, **h,
+             "color": "rgb", "tamano": 64, "optimizador": "adam", "dropout": 0.3}
     h = {**HIPERPARAMETROS_POR_DEFECTO, **h}
     h["capas"] = [int(c) for c in h["capas"]]
     h["fuente_test"] = h["fuente_test"] or h["fuente"]
@@ -119,11 +140,17 @@ def ejecutar(h):
     params, historial, mejor_epoca = entrenar_modelo(h, X, y, X_val, y_val, peso_real)
     segundos = time.time() - inicio
 
-    modelo = MODELOS[h["modelo"]]
+    if h["modelo"] == "cnn":
+        from src.models import cnn as modelo
+    else:
+        modelo = MODELOS[h["modelo"]]
     prob_val = modelo.predecir_probabilidad(X_val, params)
     prob_test = modelo.predecir_probabilidad(X_test, params)
 
-    np.savez(directorio / "parametros.npz", **params)
+    if h["modelo"] == "cnn":
+        params.save(directorio / "modelo.keras")   # en la CNN, params es el modelo de Keras
+    else:
+        np.savez(directorio / "parametros.npz", **params)
     pd.DataFrame(historial).to_csv(directorio / "historial.csv", index=False, float_format="%.6f")
     graficar_curva(historial, mejor_epoca, nombre, directorio / "curva_error.png")
 
@@ -168,7 +195,7 @@ HIPERPARAMETROS_POR_DEFECTO = {
 def main():
     d = HIPERPARAMETROS_POR_DEFECTO
     parser = argparse.ArgumentParser(description="Entrena y evalúa un modelo")
-    parser.add_argument("--modelo", choices=list(MODELOS), default=d["modelo"])
+    parser.add_argument("--modelo", choices=[*MODELOS, "cnn"], default=d["modelo"])
     parser.add_argument("--capas", type=int, nargs="+", default=d["capas"],
                         help="neuronas por capa oculta (solo mlp)")
     parser.add_argument("--dropout", type=float, default=d["dropout"],
@@ -193,6 +220,9 @@ def main():
     parser.add_argument("--nombre", default=None, help="carpeta en results/ (por defecto se genera)")
     parser.add_argument("--silencioso", action="store_true")
     args = parser.parse_args()
+    if args.modelo == "cnn":
+        parser.set_defaults(**HIPERPARAMETROS_CNN)
+        args = parser.parse_args()
 
     h = vars(args)
     h["balancear"] = not h.pop("sin_balance")

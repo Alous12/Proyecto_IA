@@ -3,7 +3,8 @@
 Proyecto grupal de SIS-252 Inteligencia Artificial (UCB, Cochabamba). Clasificamos cada
 video de la cámara web como **real** o **ataque** (foto impresa o foto en la pantalla de
 un celular) usando varios frames por video y modelos vistos en clase, programados desde
-cero con numpy: regresión logística (baseline) y red feed-forward (MLP).
+cero con numpy: regresión logística (baseline) y red feed-forward (MLP). Además, una red
+convolucional (CNN) pequeña en Keras, como en el Colab de clase.
 
 **Convenciones:** etiqueta `0 = real`, `1 = ataque`. Todos los modelos devuelven la
 probabilidad de ataque. La división train/val/test es por persona.
@@ -118,7 +119,7 @@ frames por video, el balance de clases y ejemplos de recortes.
 
 ## 7. Modelos y entrenamiento
 
-Modelos en numpy, en `src/models/`:
+Modelos en `src/models/` (los tres primeros en numpy):
 
 | Archivo | Contenido |
 |---|---|
@@ -126,6 +127,7 @@ Modelos en numpy, en `src/models/`:
 | `optimizadores.py` | gradient descent (lote completo), minibatch y Adam |
 | `regresion_logistica.py` | baseline: `inicializar_parametros`, `calcular_logits`, `calcular_error`, `calcular_gradiente`, `actualizar_parametros`, `entrenar`, `predecir_probabilidad` |
 | `mlp.py` | red feed-forward: capas ReLU con dropout, salida sigmoide, `propagacion_adelante`, `backpropagation` |
+| `cnn.py` | red convolucional en Keras (`Sequential`): `construir_cnn`, `entrenar` (`model.fit` con *EarlyStopping*), `predecir_probabilidad` |
 
 La clase real (minoritaria, ~15 % en LCC) se pondera en la BCE con `n_ataques / n_reales` de train
 (`--sin_balance` lo desactiva). Siempre se guardan los parámetros de la época con menor error de validación.
@@ -159,6 +161,28 @@ Prueba cruzada (entrenar con LCC y evaluar con todo el dataset propio, normaliza
 python -m src.data.preparar_matrices --fuente propio --estadisticas_de lcc
 python -m src.train --modelo mlp --fuente_test propio --test_todo
 ```
+
+### Red convolucional (CNN)
+
+Usa los rostros a color de 64×64, así que primero hay que generar esas matrices:
+
+```powershell
+python -m src.data.preparar_matrices --fuente lcc --color rgb
+python -m src.data.preparar_matrices --fuente lcc_eval --color rgb --estadisticas_de lcc
+```
+
+```powershell
+python -m src.train --modelo cnn                          # -> results/cnn_64_rgb/
+python -m src.train --modelo cnn --fuente_test lcc_eval   # -> results/cnn_64_rgb_test-lcc_eval/
+python -m src.evaluate --todos                            # tabla comparativa con todos los modelos
+```
+
+La CNN siempre usa `color=rgb` y tamaño 64. Por defecto entrena con Adam (0.001), lotes de 128, 20 épocas
+y *EarlyStopping* con paciencia 5, que recupera los pesos de la época con menor error de validación. La
+clase real se pondera con `class_weight` (`n_ataques / n_reales`). En lugar de `parametros.npz` se guarda
+`modelo.keras`, que se carga con `tf.keras.models.load_model`. En Windows, TensorFlow corre solo en CPU
+(≈1 min). `notebooks/03_cnn.ipynb` muestra la arquitectura, las curvas, las métricas y la comparación
+con los otros modelos.
 
 `notebooks/02_entrenamiento_colab.ipynb` hace lo mismo desde Colab (subir antes
 `data/processed/matrices/lcc_64_gris/` a Google Drive, y `lcc_eval_64_gris_norm-lcc/` para el

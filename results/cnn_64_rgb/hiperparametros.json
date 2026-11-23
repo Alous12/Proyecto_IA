@@ -1,0 +1,47 @@
+{
+  "hiperparametros": {
+    "modelo": "cnn",
+    "capas": [
+      256,
+      64
+    ],
+    "dropout": 0.3,
+    "optimizador": "adam",
+    "lr": 0.001,
+    "lote": 128,
+    "epocas": 20,
+    "paciencia": 5,
+    "l2": 0.0,
+    "balancear": true,
+    "fuente": "lcc",
+    "fuente_test": "lcc",
+    "test_todo": false,
+    "tamano": 64,
+    "color": "rgb",
+    "semilla": 42,
+    "verbose": true,
+    "nombre": null
+  },
+  "resumen": {
+    "nombre": "cnn_64_rgb",
+    "modelo": "cnn",
+    "optimizador": "adam",
+    "lr": 0.001,
+    "lote": 128,
+    "dropout": 0.3,
+    "l2": 0.0,
+    "epocas": 20,
+    "balancear": true,
+    "fuente": "lcc",
+    "fuente_test": "lcc",
+    "capas": "",
+    "peso_real": 6.734875444839858,
+    "epocas_corridas": 7,
+    "mejor_epoca": 2,
+    "error_train": 0.7548563480377197,
+    "error_val": 0.5657143592834473,
+    "val_acer": 0.32970085999653026,
+    "val_auc": 0.7604748568737763,
+    "segundos": 35.5
+  }
+}

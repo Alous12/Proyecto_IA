@@ -1,0 +1,54 @@
+{
+  "modelo": "cnn_64_rgb_test-lcc_eval",
+  "fuente_val": "lcc",
+  "fuente_test": "lcc_eval",
+  "criterio_umbral": "APCER = BPCER en validación",
+  "por_frame": {
+    "umbral": 0.5067554712295532,
+    "apcer": 0.22419488026424442,
+    "bpcer": 0.21019108280254778,
+    "acer": 0.2171929815333961,
+    "exactitud": 0.7763852242744064,
+    "auc": 0.842849341054488,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        248,
+        66
+      ],
+      [
+        1629,
+        5637
+      ]
+    ],
+    "apcer_por_tipo": {
+      "spoof": 0.22419488026424442
+    },
+    "apcer_max_tipo": 0.22419488026424442
+  },
+  "por_video": {
+    "umbral": 0.5047945082187653,
+    "apcer": 0.22268097990641345,
+    "bpcer": 0.21019108280254778,
+    "acer": 0.2164360313544806,
+    "exactitud": 0.7778364116094987,
+    "auc": 0.842849341054488,
+    "n_reales": 314,
+    "n_ataques": 7266,
+    "matriz_confusion": [
+      [
+        248,
+        66
+      ],
+      [
+        1618,
+        5648
+      ]
+    ],
+    "apcer_por_tipo": {
+      "spoof": 0.22268097990641345
+    },
+    "apcer_max_tipo": 0.22268097990641345
+  }
+}

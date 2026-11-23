@@ -7,6 +7,7 @@ data/processed/*
 # Salidas pesadas del entrenamiento (se regeneran con src.train / src.experimentos)
 results/*/parametros.npz
 results/*/predicciones.csv
+results/*/modelo.keras
 
 # Entorno virtual y caché de Python
 .venv/
